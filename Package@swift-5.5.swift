@@ -7,9 +7,9 @@ let package = Package(
     platforms: [
         .macOS(.v10_10),
         .macCatalyst(.v13),
-        .iOS(.v9),
-        .tvOS(.v9),
-        .watchOS(.v2)
+        .iOS(.v11),
+        .tvOS(.v11),
+        .watchOS(.v4)
     ],
     products: [
         .library(
@@ -27,6 +27,7 @@ let package = Package(
                 .headerSearchPath("Internal")
             ],
             linkerSettings: [
+                .linkedFramework("Contacts", .when(platforms: [.iOS, .macOS, .macCatalyst, .watchOS])),
                 .linkedFramework("CoreTelephony", .when(platforms: [.iOS, .macOS, .macCatalyst])),
             ]
         ),
