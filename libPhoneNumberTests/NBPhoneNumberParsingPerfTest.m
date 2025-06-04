@@ -16,10 +16,10 @@
 #import "NBPhoneNumberDesc.h"
 #import "NBPhoneNumberUtil.h"
 
-@interface NBExampleNumber: NSObject
+@interface NBExampleNumber : NSObject
 
-@property (nonatomic, strong) NSString *phoneNumber;
-@property (nonatomic, strong) NSString *baseRegionCode;
+@property(nonatomic, strong) NSString *phoneNumber;
+@property(nonatomic, strong) NSString *baseRegionCode;
 
 - (instancetype)initWithPhoneNumber:(NSString *)phoneNumber
                      baseRegionCode:(NSString *)baseRegionCode;
@@ -39,8 +39,7 @@
 }
 @end
 
-
-@interface NBPhoneNumberParsingPerfTest: XCTestCase
+@interface NBPhoneNumberParsingPerfTest : XCTestCase
 @end
 
 @implementation NBPhoneNumberParsingPerfTest
@@ -48,7 +47,8 @@
 #if PERF_TEST
 
 - (void)testParsing {
-  NSArray *regionCodes = [[NBMetadataHelper CCode2CNMap] allKeys];
+  NSArray *regionCodes =
+    [[[[NBMetadataHelper alloc] init] countryCodeToCountryNumberDictionary] allKeys];
 
   NSMutableArray<NBExampleNumber *> *exampleNumbers = [[NSMutableArray alloc] init];
 
@@ -73,8 +73,8 @@
       NSString *intl = [util format:phoneNumber
                        numberFormat:NBEPhoneNumberFormatINTERNATIONAL
                               error:nil];
-      NBExampleNumber * intlSample = [[NBExampleNumber alloc] initWithPhoneNumber:intl
-                                                                   baseRegionCode:regionCode];
+      NBExampleNumber *intlSample = [[NBExampleNumber alloc] initWithPhoneNumber:intl
+                                                                  baseRegionCode:regionCode];
       [exampleNumbers addObject:intlSample];
     }
   }
@@ -92,6 +92,17 @@
   }];
 }
 
-#endif // PERF_TEST
+- (void)testParsingWithDefaultRegion {
+  NBPhoneNumberUtil *util = [NBPhoneNumberUtil sharedInstance];
+
+  NSString *exampleNumber = @"+5491187654321";
+  [self measureBlock:^{
+    for (int i = 0; i < 10000; i++) {
+      [util parseWithPhoneCarrierRegion:exampleNumber error: nil];
+    }
+  }];
+}
+
+#endif  // PERF_TEST
 
 @end
