@@ -6,9 +6,9 @@ let package = Package(
     name: "libPhoneNumber",
     platforms: [
         .macOS(.v10_10),
-        .iOS(.v11),
-        .tvOS(.v11),
-        .watchOS(.v4)
+        .iOS(.v9),
+        .tvOS(.v9),
+        .watchOS(.v2)
     ],
     products: [
         .library(
@@ -27,7 +27,6 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("CoreTelephony", .when(platforms: [.iOS, .macOS])),
-                .linkedFramework("Contacts", .when(platforms: [.iOS, .macOS, .watchOS])),
             ]
         ),
         .testTarget(
