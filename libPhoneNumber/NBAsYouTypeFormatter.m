@@ -51,7 +51,6 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
     positionToRemember_;
 @property(nonatomic, strong, readwrite) NSMutableArray *possibleFormats_;
 @property(nonatomic, strong, readwrite) NBPhoneMetaData *currentMetaData_, *defaultMetaData_;
-@property(nonatomic, strong) NBMetadataHelper *metadataHelper;
 
 @end
 
@@ -135,8 +134,7 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
      * @private
      */
     NSString *eligible_format =
-        @"^[-x‐-―−ー－-／ "
-        @"­​⁠　()（）［］.\\[\\]/~⁓∼～]*(\\$\\d[-x‐-―−ー－-／ "
+        @"^[-x‐-―−ー－-／ ­​⁠　()（）［］.\\[\\]/~⁓∼～]*(\\$\\d[-x‐-―−ー－-／ "
         @"­​⁠　()（）［］.\\[\\]/~⁓∼～]*)+$";
     self.ELIGIBLE_FORMAT_PATTERN_ =
         [NSRegularExpression regularExpressionWithPattern:eligible_format options:0 error:&anError];
@@ -265,19 +263,17 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
  */
 
 - (instancetype)initWithRegionCode:(NSString *)regionCode {
-  return [self initWithRegionCode:regionCode metadataHelper:[[NBMetadataHelper alloc] init]];
+  return [self initWithRegionCode:regionCode bundle:[NSBundle mainBundle]];
 }
 
-- (instancetype)initWithRegionCode:(NSString *)regionCode
-                    metadataHelper:(NBMetadataHelper *)helper {
+- (instancetype)initWithRegionCode:(NSString *)regionCode bundle:(NSBundle *)bundle {
   self = [self init];
   if (self) {
     /**
      * @private
      * @type {i18n.phonenumbers.PhoneNumberUtil}
      */
-    self.metadataHelper = helper;
-    self.phoneUtil_ = [[NBPhoneNumberUtil alloc] initWithMetadataHelper:helper];
+    self.phoneUtil_ = [NBPhoneNumberUtil sharedInstance];
     self.defaultCountry_ = regionCode;
     self.currentMetaData_ = [self getMetadataForRegion_:self.defaultCountry_];
     /**
@@ -299,7 +295,7 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
  * @private
  */
 - (NBPhoneMetaData *)getMetadataForRegion_:(NSString *)regionCode {
-  NBMetadataHelper *helper = self.metadataHelper;
+  NBMetadataHelper *helper = [[NBMetadataHelper alloc] init];
   /** @type {number} */
   NSNumber *countryCallingCode = [self.phoneUtil_ getCountryCodeForRegion:regionCode];
   /** @type {string} */
@@ -422,8 +418,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
 
   for (NSUInteger i = 0; i < possibleFormatsLength; ++i) {
     /** @type {i18n.phonenumbers.NumberFormat} */
-    NBNumberFormat *format = [self.possibleFormats_ nb_safeObjectAtIndex:i
-                                                                   class:[NBNumberFormat class]];
+    NBNumberFormat *format =
+        [self.possibleFormats_ nb_safeObjectAtIndex:i class:[NBNumberFormat class]];
 
     if (format.leadingDigitsPatterns.count == 0) {
       // Keep everything that isn't restricted by leading digits.
@@ -520,9 +516,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
                                                 withTemplate:numberFormat];
 
   // Replaces each digit with character DIGIT_PLACEHOLDER
-  template = [self.phoneUtil_ replaceStringByRegex:template
-                                             regex:@"9"
-                                      withTemplate:NBDigitPlaceHolder];
+  template =
+      [self.phoneUtil_ replaceStringByRegex:template regex:@"9" withTemplate:NBDigitPlaceHolder];
   return template;
 }
 
@@ -651,8 +646,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
   if (!nextChar || nextChar.length <= 0) {
     return self.currentOutput_;
   }
-  self.currentOutput_ = [self inputDigitWithOptionToRememberPosition_:nextChar
-                                                     rememberPosition:YES];
+  self.currentOutput_ =
+      [self inputDigitWithOptionToRememberPosition_:nextChar rememberPosition:YES];
   return self.currentOutput_;
 }
 
@@ -682,8 +677,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
     self.ableToFormat_ = NO;
     self.inputHasFormatting_ = YES;
   } else {
-    nextChar = [self normalizeAndAccrueDigitsAndPlusSign_:nextChar
-                                         rememberPosition:rememberPosition];
+    nextChar =
+        [self normalizeAndAccrueDigitsAndPlusSign_:nextChar rememberPosition:rememberPosition];
   }
 
   if (!self.ableToFormat_) {
@@ -775,6 +770,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
         return [self attemptToChooseFormattingPattern_];
       }
   }
+
+  _isSuccessfulFormatting = NO;
 }
 
 /**
@@ -810,12 +807,10 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
     NSString *prefixBeforeNationalNumberStr = [self.prefixBeforeNationalNumber_ copy];
     NSRange lastRange = [prefixBeforeNationalNumberStr rangeOfString:self.nationalPrefixExtracted_
                                                              options:NSBackwardsSearch];
-    if (lastRange.length > 0) {
-      /** @type {number} */
-      NSUInteger indexOfPreviousNdd = lastRange.location;
-      self.prefixBeforeNationalNumber_ = [[prefixBeforeNationalNumberStr
-                                           substringWithRange:NSMakeRange(0, indexOfPreviousNdd)] mutableCopy];
-    }
+    /** @type {number} */
+    NSUInteger indexOfPreviousNdd = lastRange.location;
+    self.prefixBeforeNationalNumber_ = [[prefixBeforeNationalNumberStr
+        substringWithRange:NSMakeRange(0, indexOfPreviousNdd)] mutableCopy];
   }
 
   return self.nationalPrefixExtracted_ != [self removeNationalPrefixFromNationalNumber_];
@@ -856,8 +851,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
     NSString *pattern = numberFormat.pattern;
     /** @type {RegExp} */
     NSString *patternRegExp = [NSString stringWithFormat:@"^(?:%@)$", pattern];
-    BOOL isPatternRegExp = [[self.phoneUtil_ matchesByRegex:nationalNumber
-                                                      regex:patternRegExp] count] > 0;
+    BOOL isPatternRegExp =
+        [[self.phoneUtil_ matchesByRegex:nationalNumber regex:patternRegExp] count] > 0;
     if (isPatternRegExp) {
       if (numberFormat.nationalPrefixFormattingRule.length > 0) {
         NSArray *matches = [self.NATIONAL_PREFIX_SEPARATORS_PATTERN_
@@ -1031,8 +1026,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
     NSString *nationalPrefixForParsing =
         [NSString stringWithFormat:@"^(?:%@)", self.currentMetaData_.nationalPrefixForParsing];
     /** @type {Array.<string>} */
-    NSArray *m = [self.phoneUtil_ matchedStringByRegex:nationalNumber
-                                                 regex:nationalPrefixForParsing];
+    NSArray *m =
+        [self.phoneUtil_ matchedStringByRegex:nationalNumber regex:nationalPrefixForParsing];
     NSString *firstString = [m nb_safeStringAtIndex:0];
     if (m != nil && firstString != nil && firstString.length > 0) {
       // When the national prefix is detected, we use international formatting
@@ -1116,7 +1111,7 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
   NSString *newRegionCode = [self.phoneUtil_ getRegionCodeForCountryCode:countryCode];
 
   if ([NB_REGION_CODE_FOR_NON_GEO_ENTITY isEqualToString:newRegionCode]) {
-    NBMetadataHelper *helper = self.metadataHelper;
+    NBMetadataHelper *helper = [[NBMetadataHelper alloc] init];
     self.currentMetaData_ = [helper getMetadataForNonGeographicalRegion:countryCode];
   } else if (newRegionCode != self.defaultCountry_) {
     self.currentMetaData_ = [self getMetadataForRegion_:newRegionCode];
@@ -1180,8 +1175,8 @@ static const NSUInteger NBMinLeadingDigitsLength = 3;
 
   if ([self.phoneUtil_ stringPositionByRegex:subedString regex:NBDigitPlaceHolder] >= 0) {
     /** @type {number} */
-    int digitPatternStart = [self.phoneUtil_ stringPositionByRegex:formattingTemplate
-                                                             regex:NBDigitPlaceHolder];
+    int digitPatternStart =
+        [self.phoneUtil_ stringPositionByRegex:formattingTemplate regex:NBDigitPlaceHolder];
 
     /** @type {string} */
     NSRange tempRange = [formattingTemplate rangeOfString:NBDigitPlaceHolder];
