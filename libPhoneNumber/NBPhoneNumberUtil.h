@@ -16,7 +16,7 @@
 + (NBPhoneNumberUtil *)sharedInstance;
 - (instancetype)initWithMetadataHelper:(NBMetadataHelper *)helper;
 
-- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)init;
 
 @property(nonatomic, strong, readonly) NSDictionary *DIGIT_MAPPINGS;
 
