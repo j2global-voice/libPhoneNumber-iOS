@@ -20,14 +20,13 @@ let package = Package(
         .target(
             name: "libPhoneNumber",
             path: "libPhoneNumber",
-            exclude: ["GeneratePhoneNumberHeader.sh", "NBPhoneNumberMetadata.plist", "Info.plist"],
+            exclude: ["GeneratePhoneNumberHeader.sh", "Info.plist"],
             publicHeadersPath: ".",
             cSettings: [
                 .headerSearchPath("Internal")
             ],
             linkerSettings: [
                 .linkedFramework("Contacts", .when(platforms: [.iOS, .macOS, .watchOS])),
-                .linkedFramework("CoreTelephony", .when(platforms: [.iOS, .macOS])),
             ]
         ),
         .testTarget(
@@ -37,10 +36,7 @@ let package = Package(
             sources: [
                 "NBAsYouTypeFormatterTest.m",
                 "NBPhoneNumberParsingPerfTest.m",
-                "NBPhoneNumberUtil+ShortNumberTestHelper.h",
-                "NBPhoneNumberUtil+ShortNumberTestHelper.m",
                 "NBPhoneNumberUtilTest.m",
-                "NBShortNumberInfoTest.m"
             ]
         )
     ]
